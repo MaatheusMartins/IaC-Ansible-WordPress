@@ -1,0 +1,49 @@
+---
+- hosts: all
+  handlers:
+    - name: reiniciar apache
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
+      become: yes
+  tasks:
+    - name: Instalar dependencias
+      ansible.builtin.apt:
+        pkg:
+        - apache2
+        - ghostscript
+        - libapache2-mod-php
+        - mysql-server
+        - php
+        - php-bcmath
+        - php-curl
+        - php-imagick
+        - php-intl
+        - php-json
+        - php-mbstring
+        - php-mysql
+        - php-xml
+        - php-zip
+        state: latest
+        update_cache: yes
+      become: yes
+    - name: Criar o diretório se não existir
+      ansible.builtin.file:
+        path: /srv/www
+        state: directory
+        owner: www-data
+        group: www-data
+      become: yes
+    - name: Baixar e descompactar arquivos
+      ansible.builtin.unarchive:
+        src: https://wordpress.org/latest.tar.gz
+        dest: /srv/www
+        remote_src: yes
+      become: yes
+    - name: Copiar arquivo
+      ansible.builtin.copy:
+        src: files/wordpress.conf
+        dest: /etc/apache2/sites-available/000-default.conf
+      become: yes
+      notify:
+        - reiniciar apache
